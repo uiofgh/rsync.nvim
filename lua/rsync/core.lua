@@ -120,7 +120,7 @@ function Rsync.syncFile(fp)
 	end
 	local projectPath = Lib.getCurProject()
 	local localPath = Lib.convertLocalPath(projectPath).."/"..fp
-	local preDir = Lib.getDirPath(fp)
+	local preDir = Lib.getDirPath(fp) or ""
 	local projectName = Lib.getDirName(projectPath)
 	local remotePath = cfg.remotePath..projectName.."/"..preDir
 	local cmd, args = Rsync.wrapCmd(binPath, options, localPath, remotePath)

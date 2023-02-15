@@ -1,7 +1,7 @@
 local Lib = {}
 
 function Lib.isWin()
-	return vim.fn.has'win32'
+	return vim.fn.has'win32' == 1
 end
 
 function Lib.getPathSep()
@@ -34,7 +34,7 @@ function Lib.getDirName(str)
 end
 
 function Lib.convertLocalPath(path)
-	if not isWin() then return path end
+	if not Lib.isWin() then return path end
 	local disk = path:match("^(%a):\\"):lower()
 	local newFp = path:gsub("%a:\\", "/cygdrive/"..disk.."/")
 	newFp = newFp:gsub("\\", "/")
