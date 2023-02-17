@@ -118,10 +118,18 @@ function Rsync.syncFile(fp)
 	if cfg.sshArgs then
 		table.insert(options, cfg.sshArgs)
 	end
+	-- /Users/mac/project
 	local projectPath = Lib.getCurProject()
-	local localPath = Lib.convertLocalPath(projectPath).."/"..fp
-	local preDir = Lib.getDirPath(fp) or ""
+	-- Sometimes fp is a fullpath, changed to relativePath
+	-- /Users/mac/project/dir/fp -> dir/fp
+	local relFp = fp:gsub(projectPath..Lib.getPathSep(), "")
+	-- On Windows, F:\project\dir\fp -> /cygdrive/f/project/dir/fp
+	local localPath = Lib.convertLocalPath(projectPath).."/"..relFp
+	-- dir/fp -> dir/
+	local preDir = Lib.getDirPath(relFp) or ""
+	-- /Users/mac/project -> project
 	local projectName = Lib.getDirName(projectPath)
+	-- RemotePath/project/dir/
 	local remotePath = cfg.remotePath..projectName.."/"..preDir
 	local cmd, args = Rsync.wrapCmd(binPath, options, localPath, remotePath)
 	Rsync.createSyncTask(cmd, args)
