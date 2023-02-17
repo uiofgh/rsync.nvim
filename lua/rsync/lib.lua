@@ -21,7 +21,7 @@ function Lib.popMsg(str, t, title, tbl)
 		tbl.timeout = 1000
 		vim.notify(str, t, tbl)
 	else
-		print(string.format('[%s]%s: %s', title, t, msg))
+		print(string.format('[%s]%s: %s', title, t, str))
 	end
 end
 

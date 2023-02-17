@@ -58,7 +58,7 @@ end
 function Rsync.reloadProjectCfg()
 	local path = Lib.getCurProject()
 	Rsync.projectCfg[path] = nil
-	local cfg = getProjectCfg(path)
+	local cfg = getProjectCfg()
 	if not cfg then return end
 	local msgs = {'reload success'}
 	for k,v in pairs(cfg) do
