@@ -1,11 +1,5 @@
-local Lib = require'rsync.lib'
+local Lib = require "rsync.lib"
 local async_task = require "rsync.async_task"
-
-local pickers = require'telescope.pickers'
-local finders = require'telescope.finders'
-local conf = require'telescope.config'.values
-local themes = require'telescope.themes'
-local actions = require'telescope.actions'
 
 local DEBUG = vim.log.levels.DEBUG
 local ERROR = vim.log.levels.ERROR
@@ -21,7 +15,7 @@ local DEFAULT_PROJECT_CFG = {
 }
 
 local DEFAULT_GLOBAL_CFG = {
-	configName = ".rsync_config.lua",
+	configName = ".rsync.lua",
 	defaultProjectCfg = DEFAULT_PROJECT_CFG,
 }
 
@@ -32,26 +26,17 @@ local Rsync = {
 
 local function loadProjectCfg(path)
 	local cfg = {}
-	local fn = path..Lib.getPathSep()..Rsync.globalCfg.configName
-	local f,err = loadfile(fn, 't', cfg)
-	if not f then
-		return
-	end
+	local fn = path .. Lib.getPathSep() .. Rsync.globalCfg.configName
+	local f, err = loadfile(fn, "t", cfg)
+	if not f then return end
 	f()
-	for k,v in pairs(Rsync.globalCfg.defaultProjectCfg) do
-		if not cfg[k] then
-			cfg[k] = v
-		end
-	end
-	Rsync.projectCfg[path] = cfg
+	Rsync.projectCfg[path] = vim.tbl_deep_extend("keep", cfg, Rsync.globalCfg.defaultProjectCfg)
 	return true
 end
 
 local function getProjectCfg()
 	local path = Lib.getCurProject()
-	if not Rsync.projectCfg[path] then
-		loadProjectCfg(path)
-	end
+	if not Rsync.projectCfg[path] then loadProjectCfg(path) end
 	return Rsync.projectCfg[path]
 end
 
@@ -60,8 +45,8 @@ function Rsync.reloadProjectCfg()
 	Rsync.projectCfg[path] = nil
 	local cfg = getProjectCfg()
 	if not cfg then return end
-	local msgs = {'reload success'}
-	for k,v in pairs(cfg) do
+	local msgs = { "reload success" }
+	for k, v in pairs(cfg) do
 		table.insert(msgs, string.format("%s : %s", k, v))
 	end
 	local msg = Lib.joinStrTbl(msgs, "\n")
@@ -70,29 +55,22 @@ end
 
 function Rsync.setup(tbl)
 	if not tbl then return end
-	for k,v in pairs(tbl) do
-		Rsync.globalCfg[k] = v
-	end
-	for k,v in pairs(DEFAULT_GLOBAL_CFG) do
-		if not Rsync.globalCfg[k] then
-			Rsync.globalCfg[k] = v
-		end
-	end
+	Rsync.globalCfg = vim.tbl_deep_extend("keep", tbl, DEFAULT_GLOBAL_CFG)
 end
 
 function Rsync.toggleSyncOnSave(custom_opts)
 	local cfg = getProjectCfg()
 	if not cfg then return end
-	local msg = cfg.syncOnSave and 'off' or 'on'
+	local msg = cfg.syncOnSave and "off" or "on"
 	cfg.syncOnSave = not cfg.syncOnSave
-	Lib.popMsg('sync_on_save '..msg)
+	Lib.popMsg("sync_on_save " .. msg)
 end
 
 function Rsync.onFileSave(info)
 	local cfg = getProjectCfg()
 	if not cfg then return end
 	if not cfg.syncOnSave then return end
-	local fp = info.file
+	local fp = info.match
 	Rsync.syncFile(fp)
 end
 
@@ -115,22 +93,16 @@ function Rsync.syncFile(fp)
 	local options = {
 		cfg.options,
 	}
-	if cfg.sshArgs then
-		table.insert(options, cfg.sshArgs)
-	end
+	if cfg.sshArgs then table.insert(options, cfg.sshArgs) end
 	-- /Users/mac/project
 	local projectPath = Lib.getCurProject()
-	-- Sometimes fp is a fullpath, changed to relativePath
-	-- /Users/mac/project/dir/fp -> dir/fp
-	local relFp = fp:gsub(projectPath..Lib.getPathSep(), "")
 	-- On Windows, F:\project\dir\fp -> /cygdrive/f/project/dir/fp
-	local localPath = Lib.convertLocalPath(projectPath).."/"..relFp
-	-- dir/fp -> dir/
-	local preDir = Lib.getDirPath(relFp) or ""
+	local localPath = Lib.convertLocalPath(fp)
+	local preDir = Lib.relpath(Lib.getDirPath(localPath), projectPath)
 	-- /Users/mac/project -> project
 	local projectName = Lib.getDirName(projectPath)
 	-- RemotePath/project/dir/
-	local remotePath = cfg.remotePath..projectName.."/"..preDir
+	local remotePath = cfg.remotePath .. projectName .. "/" .. preDir
 	local cmd, args = Rsync.wrapCmd(binPath, options, localPath, remotePath)
 	Rsync.createSyncTask(cmd, args)
 end
@@ -143,22 +115,18 @@ function Rsync.wrapCmd(binPath, options, localPath, remotePath)
 	return cmd, args
 end
 
-function Rsync.createSyncTask(cmd, args)
-	async_task.start(cmd, args, Rsync.onSyncEnd)
-end
+function Rsync.createSyncTask(cmd, args) async_task.start(cmd, args, Rsync.onSyncEnd) end
 
 function Rsync.onSyncEnd(task)
 	local level = INFO
 	local output = task.output
 	local strs = {}
-	for k,v in ipairs(output) do
+	for _, v in ipairs(output) do
 		table.insert(strs, v.data)
-		if v.t == "error" then
-			level = ERROR
-		end
+		if v.t == "error" then level = ERROR end
 	end
 	if #strs > 0 then
-		local str = Lib.joinStrTbl(strs, "\n")
+		local str = table.concat(strs, "\n")
 		Lib.popMsg(str, level)
 	end
 end
