@@ -31,19 +31,6 @@ function Lib.convertLocalPath(path)
 	return newFp
 end
 
-function Lib.joinTbl(a, b)
-	local r = {}
-	a = a or {}
-	b = b or {}
-	for _, v in ipairs(a) do
-		table.insert(r, v)
-	end
-	for _, v in ipairs(b) do
-		table.insert(r, v)
-	end
-	return r
-end
-
 function Lib.split(s, re, plain, n)
 	local i1, ls = 1, {}
 	if not re then re = "%s+" end
@@ -71,7 +58,7 @@ end
 function Lib.relpath(P, start)
 	local split, min, append = Lib.split, math.min, table.insert
 	local sep = Lib.getPathSep()
-	start = Lib.getCurProject()
+	start = start or Lib.getCurProject()
 	local compare
 	if Lib.isWin() then
 		P = P:gsub("/", "\\")

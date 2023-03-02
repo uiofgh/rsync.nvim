@@ -49,7 +49,7 @@ function Rsync.reloadProjectCfg()
 	for k, v in pairs(cfg) do
 		table.insert(msgs, string.format("%s : %s", k, v))
 	end
-	local msg = Lib.joinStrTbl(msgs, "\n")
+	local msg = table.concat(msgs, "\n")
 	Lib.popMsg(msg)
 end
 
