@@ -54,7 +54,8 @@ function Rsync.reloadProjectCfg()
 end
 
 function Rsync.setup(tbl)
-	if not tbl then return end
+	Rsync.inited = true
+	tbl = tbl or {}
 	Rsync.globalCfg = vim.tbl_deep_extend("keep", tbl, DEFAULT_GLOBAL_CFG)
 end
 
@@ -82,6 +83,7 @@ function Rsync.checkValidSyncCfg()
 end
 
 function Rsync.syncFile(fp)
+	if not Rsync.inited then return end
 	local ret, key = Rsync.checkValidSyncCfg()
 	if not ret then
 		Lib.popMsg(string.format("can't sync, cfg key:%s error", key))
