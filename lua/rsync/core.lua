@@ -41,6 +41,7 @@ local function getProjectCfg()
 end
 
 function Rsync.reloadProjectCfg()
+	if not Rsync.inited then return end
 	local path = Lib.getCurProject()
 	Rsync.projectCfg[path] = nil
 	local cfg = getProjectCfg()
@@ -60,6 +61,7 @@ function Rsync.setup(tbl)
 end
 
 function Rsync.toggleSyncOnSave(custom_opts)
+	if not Rsync.inited then return end
 	local cfg = getProjectCfg()
 	if not cfg then return end
 	local msg = cfg.syncOnSave and "off" or "on"
@@ -68,6 +70,7 @@ function Rsync.toggleSyncOnSave(custom_opts)
 end
 
 function Rsync.onFileSave(info)
+	if not Rsync.inited then return end
 	local cfg = getProjectCfg()
 	if not cfg then return end
 	if not cfg.syncOnSave then return end
