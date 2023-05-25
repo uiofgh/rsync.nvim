@@ -8,14 +8,19 @@ function Lib.getCurProject() return vim.fn.getcwd() end
 
 function Lib.popMsg(str, t, title, tbl)
 	title = title or "rsync.nvim"
-	if vim.notify then
+	local ok, notify = pcall(require, "notify")
+	if ok then
 		tbl = tbl or {}
 		tbl.title = title
 		t = t or vim.log.levels.INFO
 		tbl.timeout = 1000
-		vim.notify(str, t, tbl)
+		vim.schedule(function()
+			notify.notify(str, t, tbl)
+		end)
 	else
-		print(string.format("[%s]%s: %s", title, t, str))
+		vim.schedule(function()
+			print(string.format("[%s]%s: %s", title, t, str))
+		end)
 	end
 end
 
