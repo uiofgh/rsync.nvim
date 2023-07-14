@@ -105,7 +105,7 @@ function Rsync.syncFile(fp)
 	local localPath = Lib.convertLocalPath(fp)
 	local preDir = Lib.relpath(Lib.getDirPath(localPath), projectPath)
 	-- /Users/mac/project -> project
-	local projectName = Lib.getDirName(projectPath)
+	local projectName = cfg.projectName or Lib.getDirName(projectPath)
 	-- RemotePath/project/dir/
 	local remotePath = cfg.remotePath .. projectName .. "/" .. preDir
 	local cmd, args = Rsync.wrapCmd(binPath, options, localPath, remotePath)
