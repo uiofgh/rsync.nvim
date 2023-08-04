@@ -130,6 +130,11 @@ function Rsync.onSyncEnd(task)
 		table.insert(strs, v.data)
 		if v.t == "error" then level = ERROR end
 	end
+	if level ~= ERROR then
+		table.insert(strs, 1, "Rsync success.")
+	else
+		table.insert(strs, 1, "Rsync error.")
+	end
 	if #strs > 0 then
 		local str = table.concat(strs, "\n")
 		Lib.popMsg(str, level)
