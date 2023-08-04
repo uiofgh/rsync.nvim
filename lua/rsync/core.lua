@@ -46,11 +46,7 @@ function Rsync.reloadProjectCfg()
 	Rsync.projectCfg[path] = nil
 	local cfg = getProjectCfg()
 	if not cfg then return end
-	local msgs = { "reload success" }
-	for k, v in pairs(cfg) do
-		table.insert(msgs, string.format("%s : %s", k, v))
-	end
-	local msg = table.concat(msgs, "\n")
+	local msg = "reload success\n" .. vim.inspect(cfg)
 	Lib.popMsg(msg)
 end
 
@@ -95,7 +91,7 @@ function Rsync.syncFile(fp)
 	local cfg = getProjectCfg()
 	fp = fp:gsub("\\", "/")
 	local binPath = cfg.binPath
-	local options = cfg.options
+	local options = vim.deepcopy(cfg.options)
 	if cfg.sshArgs then table.insert(options, cfg.sshArgs) end
 	-- /Users/mac/project/...
 	local projectPath = Lib.getCurProject()
@@ -110,7 +106,13 @@ function Rsync.syncFile(fp)
 	local localPath = Lib.convertLocalPath(fp)
 	-- /Users/mac/project/... -> ...
 	local preDir = Lib.relpath(Lib.getDirPath(localPath), projectPath)
-	if isRelative then localPath = localPath:gsub(preDir, "./" .. preDir) end
+	if preDir:match "%.%." then
+		isRelative = false
+		options = vim.tbl_filter(function(t) return t ~= "-R" and t ~= "--relative" end, options)
+	end
+	if isRelative then
+		localPath = localPath:gsub(projectPath .. "/" .. preDir, projectPath .. "/" .. "./" .. preDir)
+	end
 	-- /Users/mac/project -> project
 	local projectName = cfg.projectName or Lib.getDirName(projectPath)
 	-- RemotePath/project
