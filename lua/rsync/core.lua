@@ -10,7 +10,7 @@ local WARN = vim.log.levels.WARN
 local DEFAULT_PROJECT_CFG = {
 	syncOnSave = true,
 	binPath = "rsync",
-	options = "-vr",
+	options = { "-r", "-R" },
 	sshArgs = nil,
 }
 
@@ -95,19 +95,30 @@ function Rsync.syncFile(fp)
 	local cfg = getProjectCfg()
 	fp = fp:gsub("\\", "/")
 	local binPath = cfg.binPath
-	local options = {
-		cfg.options,
-	}
+	local options = cfg.options
 	if cfg.sshArgs then table.insert(options, cfg.sshArgs) end
-	-- /Users/mac/project
+	-- /Users/mac/project/...
 	local projectPath = Lib.getCurProject()
-	-- On Windows, F:\project\dir\fp -> /cygdrive/f/project/dir/fp
+	-- On Windows, F:\project\dir\... -> /cygdrive/f/project/dir/...
+	local isRelative = false
+	for _, option in ipairs(options) do
+		if option == "-R" or option == "--relative" then
+			isRelative = true
+			break
+		end
+	end
 	local localPath = Lib.convertLocalPath(fp)
+	-- /Users/mac/project/... -> ...
 	local preDir = Lib.relpath(Lib.getDirPath(localPath), projectPath)
+	if isRelative then localPath = localPath:gsub(preDir, "./" .. preDir) end
 	-- /Users/mac/project -> project
 	local projectName = cfg.projectName or Lib.getDirName(projectPath)
-	-- RemotePath/project/dir/
-	local remotePath = cfg.remotePath .. projectName .. "/" .. preDir
+	-- RemotePath/project
+	local remotePath = cfg.remotePath .. projectName
+	if not isRelative then
+		-- RemotePath/project/...
+		remotePath = remotePath .. "/" .. preDir
+	end
 	local cmd, args = Rsync.wrapCmd(binPath, options, localPath, remotePath)
 	Rsync.createSyncTask(cmd, args)
 end
