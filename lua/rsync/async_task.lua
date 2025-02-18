@@ -32,7 +32,7 @@ function M.start(cmd, args, endCb)
 			table.insert(task.output, { t = "info", data = data })
 		end,
 		on_stderr = function(err, data)
-			if not err then return end
+			if not err and (not data or data == "") then return end
 			local task = AllTasks[uid]
 			if not task then return end
 			table.insert(task.output, { t = "error", data = data })
