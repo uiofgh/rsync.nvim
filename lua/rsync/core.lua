@@ -27,7 +27,7 @@ local Rsync = {
 local function loadProjectCfg(path)
 	local cfg = {}
 	local fn = path .. Lib.getPathSep() .. Rsync.globalCfg.configName
-	local f, err = loadfile(fn, "t", cfg)
+	local f, err = loadfile(fn, nil, cfg)
 	if not f then return end
 	f()
 	Rsync.projectCfg[path] = vim.tbl_deep_extend("keep", cfg, Rsync.globalCfg.defaultProjectCfg)
